@@ -14,10 +14,22 @@ try:
 except ImportError:  # pragma: no cover
     from urllib import urlencode
 
-try:
-    from shlex import quote
-except ImportError: # pragma: no cover
-    from pipes import quote
+quote = None
+if sys.platform == 'win32':  # pragma: no cover
+    try:
+        # https://github.com/python/cpython/blob/3.7/Lib/subprocess.py#L174-L175
+        from subprocess import list2cmdline
+
+        def quote(arg):
+            return list2cmdline([arg])
+    except ImportError:
+        pass
+
+if quote is None:
+    try:
+        from shlex import quote
+    except ImportError:  # pragma: no cover
+        from pipes import quote
 
 import subprocess
 
@@ -181,7 +193,7 @@ def try_to_run(cmd, shell=True):
 
 def run_python_coverage(args):
     """Run the Python coverage tool
-    
+
     If it's importable in this Python, launch it using 'python -m'.
     Otherwise, look it up on PATH like any other command.
     """
